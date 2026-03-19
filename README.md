@@ -58,7 +58,7 @@ The original splash screen (*"OpenSP 0.9 / www.mass-spec.ru"*) was replaced with
 A `confirmStart()` function was introduced to require explicit operator confirmation before any pumping operation begins. After selecting an infusion or refill action, the LCD prompts:
 
 ```
-Ready? Yes or No
+Ready to Start?
 < NO       YES >
 ```
 
