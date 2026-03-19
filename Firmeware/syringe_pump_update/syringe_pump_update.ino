@@ -12,14 +12,11 @@
   ----------------------------------------------------------------
 
   CHANGE 1 — Lead screw pitch updated (MMPER360)
-    The default 2 mm/revolution lead screw was replaced by a
-    0.6 mm/revolution lead screw. This reduces linear displacement
-    per motor step, resulting in smoother and more precise motion
-    during microinjection procedures.
+    The default 2 mm/revolution lead screw was replaced (optional) by a 0.6 mm/revolution lead screw. This reduces linear displacement
+    per motor step, resulting in smoother and more precise motion during microinjection procedures.
 
   CHANGE 2 — Manual Positioning Mode added (JOG CONTROL)
-    A new "Positioning" entry was added to the main menu,
-    accessible between "Cycle Mode" and "Settings".
+    A new "Positioning" entry was added to the main menu, accessible between "Cycle Mode" and "Settings".
 
     Button mapping inside Positioning mode:
       UP    -> forward movement (while held)
@@ -36,28 +33,24 @@
       - Audible beep when a mechanical endstop is reached
       - Real-time display of relative displacement in millimeters
 
-    Intended use: manual syringe alignment and fine positioning
-    prior to microinjection procedures.
+    Intended use: manual syringe alignment and fine positioning prior to microinjection procedures.
 
   CHANGE 3 — Startup screensaver message customized
-    The original "OpenSP 0.9 / www.mass-spec.ru" splash screen
-    was replaced with a custom message.
+    The original "OpenSP 0.9 / www.mass-spec.ru" splash screen was replaced with a custom message.
 
   CHANGE 4 — Start confirmation dialog added (confirmStart)
-    A new confirmStart() function was added to require user
-    confirmation before any pumping operation begins.
-    The LCD displays "Ready to Start? Yes or No" with RIGHT to confirm
-    and LEFT to cancel. pumpSingly() was updated to call this
+    A new confirmStart() function was added to require user confirmation before any pumping operation begins.
+    The LCD displays "Ready to Start? Yes or No" with RIGHT to confirm and LEFT to cancel. pumpSingly() was updated to call this
     function before proceeding.
+
+  CHANGE 5 — Rounding correction in calculateActualValue()
+    In the original code, FLOWRATE and VOLUME computed values were assigned to uint32_t via direct cast (truncation). This has been
+    replaced with proper rounding (+ 0.5 before cast), reducing cumulative stepping errors and improving dispensed volume accuracy.
 
 ********************************************************************/
 
-
-
 #include <LiquidCrystal.h>
 #include <EEPROM.h>
-
-
 
 /********************************************************************
           BASIC SETTINGS
