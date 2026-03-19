@@ -7,6 +7,8 @@ This firmware is a modified version of the open-source syringe pump originally d
 
 The modifications listed below were made targeting improved motion smoothness, manual positional control, and operator safety during microinjection procedures.
 
+Updated: 01/2026 by Flavio Mourao
+
 ---
 
 ## Change 1 — Lead screw pitch updated
