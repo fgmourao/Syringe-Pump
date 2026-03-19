@@ -1,34 +1,54 @@
 /********************************************************************
   Open-Source Syringe Pump
   https://www.mass-spec.ru/projects/diy/syringe_pump/eng/
-  by Andrey Samokhin / Published on Mar 1, 2020
+  Original author: Andrey Samokhin
+  Original release: Mar 1, 2020
+  Original version: 0.9a
 
+  ----------------------------------------------------------------
+  MODIFICATIONS BY: Flavio Mourao
+  DATE:             01/08/2026
+  BASED ON:         syringe_pump_0_9a.ino
+  ----------------------------------------------------------------
 
+  CHANGE 1 — Lead screw pitch updated (MMPER360)
+    The default 2 mm/revolution lead screw was replaced by a
+    0.6 mm/revolution lead screw. This reduces linear displacement
+    per motor step, resulting in smoother and more precise motion
+    during microinjection procedures.
 
-/********************************************************************
-  UPDATE by Flavio Mourao - 01/08/2026 
+  CHANGE 2 — Manual Positioning Mode added (JOG CONTROL)
+    A new "Positioning" entry was added to the main menu,
+    accessible between "Cycle Mode" and "Settings".
 
-  -> A 0.6 mm/revolution lead screw was incorporated into the original design to reduce linear displacement per motor step, resulting in smoother motion during microinjection
+    Button mapping inside Positioning mode:
+      UP    -> forward movement (while held)
+      DOWN  -> backward movement (while held)
+      LEFT  -> exit and return to main menu
+      RIGHT -> reset relative position counter to 0 mm
 
-  -> MANUAL POSITIONING MODE (JOG CONTROL)
+    Features:
+      - Movement occurs only while a button is held
+      - Two speeds depending on press duration:
+          Short press  -> fine / slow positioning
+          Long press   -> coarse / fast positioning
+      - Stepper driver is enabled only during movement
+      - Audible beep when a mechanical endstop is reached
+      - Real-time display of relative displacement in millimeters
 
-  - Added a manual "Positioning" mode to the menu
-  - UP button: forward movement (while pressed)
-  - DOWN button: backward movement (while pressed)
-  - LEFT button: exit positioning mode
-  - RIGHT button: reset position (mm = 0)
+    Intended use: manual syringe alignment and fine positioning
+    prior to microinjection procedures.
 
-  Features:
-  - Movement occurs only while a button is pressed
-  - Two speeds:
-      * Short press  -> fine positioning
-      * Long press   -> fast positioning
-  - Stepper driver is enabled only during movement
-  - Audible beep when a mechanical endstop is reached
-  - Real-time display of relative displacement in millimeters
+  CHANGE 3 — Startup screensaver message customized
+    The original "OpenSP 0.9 / www.mass-spec.ru" splash screen
+    was replaced with a custom message.
 
-  This mode is intended for manual alignment, syringe positioning,
-  and fine control prior to microinjection procedures.
+  CHANGE 4 — Start confirmation dialog added (confirmStart)
+    A new confirmStart() function was added to require user
+    confirmation before any pumping operation begins.
+    The LCD displays "Ready? Yes or No" with RIGHT to confirm
+    and LEFT to cancel. pumpSingly() was updated to call this
+    function before proceeding.
 
 ********************************************************************/
 
@@ -50,8 +70,8 @@
 #define INVERTDIRECTION true  // If the carriage moves in the opposite direction, change to 'false'
 
 // Leadscrew
-//#define MMPER360 2            // Leadscrew pitch, mm per revolution - Update 01/07/2026 - Flavio: Default =  2 mm/revolution
-#define MMPER360 0.6            // Leadscrew pitch, mm per revolution - Update 01/07/2026 - Flavio: new Lead screw 0.6 mm/revolution to become smooth for microinjections
+//#define MMPER360 2            // Leadscrew pitch, mm per revolution -- CHANGE 1: original value commented out (default = 2 mm/rev)
+#define MMPER360 0.6            // Leadscrew pitch, mm per revolution -- CHANGE 1: replaced with 0.6 mm/rev for smoother microinjection
 
 // Arduino pins
 #define STEP_PIN 2            // STEP pin (A4988)
@@ -70,7 +90,7 @@
 #define LONGPRESSDELAY 450
 #define AUTOCHANGINGDELAY 300
 
-#define NITEMS 44
+#define NITEMS 44  // CHANGE 2: incremented from 43 to 44 to accommodate the new Positioning menu entry
 
 #define LINK2S 12
 #define LINK2E 13
@@ -93,7 +113,7 @@ struct MenuItem
 
 enum listOfButtons {RIGHT, UP, DOWN, LEFT, SELECT, NA};
 enum listOfButtonStates {RELEASE, SHORTPRESS, MEDIUMPRESS, LONGPRESS};
-enum listOfPrograms {CHANGEVALUE = 200, SELECTFROMLIST, INFUSEVOLUME, INFUSETIME, REFILLVOLUME, REFILLFULL, CYCLEMODE, FIRMWAREINFO,POSITIONING};
+enum listOfPrograms {CHANGEVALUE = 200, SELECTFROMLIST, INFUSEVOLUME, INFUSETIME, REFILLVOLUME, REFILLFULL, CYCLEMODE, FIRMWAREINFO,POSITIONING};  // CHANGE 2: added POSITIONING to the program enum
 enum listOfItemTypes {TEXT, LIST, VOLUME, TIME, FLOWRATE, LENGTHPERVOLUME, DIAMETER};
 
 const char firmwareInfo[] = "0.9a";
@@ -111,7 +131,7 @@ float coef;
 uint8_t endStopPin;
 volatile uint32_t ustepCounter;
 uint32_t ustepCounterLimit;
-long positioning_uSteps = 0;
+long positioning_uSteps = 0;  // CHANGE 2: global microstep counter for Positioning mode
 
 uint32_t getValue(uint8_t itemNo);
 void changeValue();
@@ -136,10 +156,11 @@ void infuseVolume();
 void infuseTime();
 void refillVolume();
 void refillFull();
+bool confirmStart();  // CHANGE 4: forward declaration for the new confirmation dialog function
 void pumpSingly(int8_t pumpingDirection, uint32_t flowrate, uint32_t volume);
 void pumpContinuously();
 uint8_t pump(uint32_t flowrate, uint32_t volume);
-void positioningMode();
+void positioningMode();  // CHANGE 2: forward declaration for the new positioningMode() function
 
 
 /********************************************************************
@@ -200,13 +221,13 @@ void setup()
   items[40] = {SELECTFROMLIST, 39, 0, 22, TEXT, "uL/min"};
   items[41] = {0, 0, CHANGEVALUE, 23, DIAMETER, "diameter:", 15, 11284};
   items[42] = {0, 0, CHANGEVALUE, 24, LENGTHPERVOLUME, "length/volume:", 16, 10000};
-  items[43] = {POSITIONING, 0, 0, 0, TEXT, "Positioning"};
-  items[3].button[DOWN] = 43;    // "Cycle Mode" -> "Positioning"
-  items[43].button[UP]  = 3;
-  items[43].button[DOWN] = 4;    // Positioning -> Settings
-  items[4].button[UP]    = 43;
-  items[4].button[DOWN]  = 1;    // Settings -> Infuse
-  items[1].button[UP]    = 4;
+  items[43] = {POSITIONING, 0, 0, 0, TEXT, "Positioning"};  // CHANGE 2: new Positioning menu item (index 43)
+  items[3].button[DOWN] = 43;    // CHANGE 2: "Cycle Mode" now navigates DOWN to "Positioning"
+  items[43].button[UP]  = 3;     // CHANGE 2: "Positioning" navigates UP to "Cycle Mode"
+  items[43].button[DOWN] = 4;    // CHANGE 2: "Positioning" navigates DOWN to "Settings"
+  items[4].button[UP]    = 43;   // CHANGE 2: "Settings" navigates UP to "Positioning"
+  items[4].button[DOWN]  = 1;    // CHANGE 2: "Settings" navigates DOWN to "Infuse" (menu wrap-around)
+  items[1].button[UP]    = 4;    // CHANGE 2: "Infuse" navigates UP to "Settings" (menu wrap-around)
 
   for (uint8_t i = 1; i < NITEMS; i++)
   {
@@ -245,7 +266,7 @@ void loop()
     else if (nextItem == REFILLFULL) refillFull();
     else if (nextItem == CYCLEMODE) pumpContinuously();
     else if (nextItem == FIRMWAREINFO) printFirmwareInfo();
-    else if (nextItem == POSITIONING) positioningMode();
+    else if (nextItem == POSITIONING) positioningMode();  // CHANGE 2: dispatch to positioningMode() when selected from menu
   }
 }
 
@@ -576,13 +597,13 @@ void showScreensaver()
 {
   lcd.clear();
   lcd.setCursor(0, 0);
-  //lcd.print(F("   OpenSP 0.9   "));
+  //lcd.print(F("   OpenSP 0.9   "));  // CHANGE 3: original splash screen commented out
   //lcd.setCursor(0, 1);
   //lcd.print(F("www.mass-spec.ru"));
 
-  lcd.print(F("  This Machine   "));
+  lcd.print(F("  This Machine   "));  // CHANGE 3: custom splash screen line 1
   lcd.setCursor(0, 1);
-  lcd.print(F(" Kills Fascists"));
+  lcd.print(F(" Kills Fascists"));     // CHANGE 3: custom splash screen line 2
 
   currentItem = 1;
   waitingForButton(NA, currentItem);
@@ -809,10 +830,41 @@ void refillFull()
 
 
 /********************************************************************
+  confirmStart  -- CHANGE 4: new function, did not exist in original
+********************************************************************/
+bool confirmStart()
+{
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(F("Ready? Yes or No"));  // CHANGE 4: confirmation prompt before any pumping operation
+  lcd.setCursor(0, 1);
+  lcd.print(F("< NO       YES >"));  // CHANGE 4: LEFT = cancel, RIGHT = confirm
+
+  while (true)
+  {
+    getButtonState();
+    if (buttonState == SHORTPRESS)
+    {
+      buttonState = MEDIUMPRESS;
+      if (lastButton == RIGHT) return true;  // Start
+      if (lastButton == LEFT) return false;  // Cancel
+    }
+  }
+}
+
+
+/********************************************************************
   pumpSingly
 ********************************************************************/
 void pumpSingly(int8_t pumpingDirection, uint32_t flowrate, uint32_t volume)
 {
+  // Checking confirmation....  -- CHANGE 4: guard added, aborts if user cancels
+  if (!confirmStart())
+  {
+    printScreen(); // Return
+    return;
+  }
+
   if (checkEndstop(pumpingDirection) == true)
   {
     pump(pumpingDirection, flowrate, volume);

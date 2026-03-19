@@ -1,69 +1,77 @@
 # Open-Source Syringe Pump – Modified Version
 
-This firmware builds upon an existing open-source syringe pump design originally developed by **Andrey Samokhin**.
+This firmware is a modified version of the open-source syringe pump originally developed by **Andrey Samokhin** (v0.9a, March 1, 2020).
 
-The original architecture provides a robust and accessible DIY solution. This modified version introduces mechanical and firmware-level enhancements aimed at improving motion smoothness, positional control, and usability during fine experimental procedures.
+> **Original project:** [mass-spec.ru/projects/diy/syringe_pump/eng](https://www.mass-spec.ru/projects/diy/syringe_pump/eng/)
+> *All credit for the original concept and baseline implementation belongs to the original author.*
 
-### Key Priorities
-* **Controlled linear displacement:** Higher precision for micro-movements.
-* **Manual alignment capability:** Real-time tactile control.
-* **Clear operator feedback:** Improved UI and audible alerts.
-
-This version is particularly suitable for laboratory microinjection, syringe positioning, and preparatory alignment steps prior to automated infusion.
+The modifications listed below were made by **Flavio Mourao** on **01/08/2026**, targeting improved motion smoothness, manual positional control, and operator safety during microinjection procedures.
 
 ---
 
-## 1. Mechanical Design Update
+## Change 1 — Lead screw pitch updated
 
-To improve positioning resolution and reduce stepwise linear displacement, the original lead screw was replaced with a **0.6 mm/revolution** lead screw. This modification significantly decreases the linear travel per motor step.
+The default lead screw was replaced with a **0.6 mm/revolution** unit, reducing linear displacement per motor step and resulting in smoother, more continuous motion during fine procedures.
 
+| Parameter | Original | Modified |
+| :--- | :---: | :---: |
+| Lead screw pitch | 2.0 mm/rev | **0.6 mm/rev** |
+| Displacement per microstep | Higher | **Reduced** |
+| Motion smoothness | Standard | **Improved** |
 
+---
 
-### Mechanical Parameters
-| Parameter | Value / Detail |
+## Change 2 — Manual Positioning Mode (Jog Control)
+
+A dedicated **Positioning** entry was added to the main menu (between *Cycle Mode* and *Settings*), enabling direct real-time control of the syringe position via the existing interface buttons.
+
+### Button mapping
+
+| Button | Action |
 | :--- | :--- |
-| **Lead screw pitch** | 0.6 mm/rev |
-| **Effect** | Reduced displacement per motor step; improved motion continuity |
-| **Benefit** | Increased precision during microinjection and manual positioning |
+| **UP** | Forward movement (while held) |
+| **DOWN** | Backward movement (while held) |
+| **LEFT** | Exit positioning mode |
+| **RIGHT** | Reset relative position counter ($mm = 0$) |
+
+### Features
+* **Press-to-move:** Movement occurs only while a button is actively held.
+* **Dual-speed operation:** short press → fine positioning; long press → fast positioning.
+* **Power efficiency:** Stepper driver is enabled only during active movement, reducing heat and electrical noise.
+* **Endstop safety:** Audible beep when a mechanical limit is reached; movement stops automatically.
+* **Real-time feedback:** Relative displacement displayed in millimeters on the LCD.
+
+> **Note:** This mode is intended for manual syringe alignment and fine adjustment prior to automated infusion.
 
 ---
 
-## 2. Firmware Update – Manual Positioning Mode (Jog Control)
+## Change 3 — Startup screensaver customized
 
-A dedicated **Manual Positioning Mode** has been added to the firmware, enabling direct, real-time control of the syringe position via the user interface.
-
-### Control Mapping
-* **UP button:** Forward movement (while pressed)
-* **DOWN button:** Backward movement (while pressed)
-* **LEFT button:** Exit positioning mode
-* **RIGHT button:** Reset relative position ($mm = 0$)
-
-### Operational Characteristics
-* **Tactile Control:** Movement occurs only while a button is actively pressed.
-* **Dual-Speed Operation:** * *Short press* → fine positioning.
-    * *Long press* → fast positioning.
-* **Efficiency:** The stepper motor driver is enabled only during active movement, reducing heat generation and electrical noise.
-* **Safety:** Audible feedback (beep) when a mechanical endstop is reached.
-* **Feedback:** Real-time display of relative linear displacement in millimeters.
-
-> **Note:** This mode is intended exclusively for manual alignment and fine adjustment prior to automated infusion.
+The original splash screen (*"OpenSP 0.9 / www.mass-spec.ru"*) was replaced with a custom message displayed at boot.
 
 ---
 
-## 3. System Features Summary
+## Change 4 — Start confirmation dialog added
 
-* **High-resolution** linear positioning via fine-pitch lead screw.
-* **Manual jog control** with dual-speed operation.
-* **Real-time positional feedback** in millimeters.
-* **Endstop detection** with audible alerts.
-* **Reduced vibration** and improved motion smoothness.
+A `confirmStart()` function was introduced to require explicit operator confirmation before any pumping operation begins. After selecting an infusion or refill action, the LCD prompts:
+
+```
+Ready? Yes or No
+< NO       YES >
+```
+
+* **RIGHT** → confirm and proceed
+* **LEFT** → cancel and return to menu
+
+This prevents accidental triggering of pumping operations.
 
 ---
 
-## 4. Original Project Reference
+## Summary
 
-This work is based on the original open-source syringe pump design by **Andrey Samokhin**, published on March 1, 2020.
-
-* **Original Project Link:** [Link to Original Design](https://www.mass-spec.ru/projects/diy/syringe_pump/eng/)
-
-*All credit for the original concept and baseline implementation belongs to the original author.*
+| # | Change | Scope |
+| :---: | :--- | :--- |
+| 1 | Lead screw pitch: 2.0 → 0.6 mm/rev | Mechanical + firmware (`MMPER360`) |
+| 2 | Manual Positioning Mode (jog control) | Firmware — new function + menu entry |
+| 3 | Custom startup screensaver | Firmware — `showScreensaver()` |
+| 4 | Start confirmation dialog | Firmware — new `confirmStart()` + `pumpSingly()` |
