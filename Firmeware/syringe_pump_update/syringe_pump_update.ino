@@ -7,7 +7,7 @@
 
   ----------------------------------------------------------------
   MODIFICATIONS BY: Flavio Mourao
-  DATE:             01/08/2026
+  DATE:             Jan 08 2026
   BASED ON:         syringe_pump_0_9a.ino
   ----------------------------------------------------------------
 
@@ -46,7 +46,7 @@
   CHANGE 4 — Start confirmation dialog added (confirmStart)
     A new confirmStart() function was added to require user
     confirmation before any pumping operation begins.
-    The LCD displays "Ready? Yes or No" with RIGHT to confirm
+    The LCD displays "Ready to Start? Yes or No" with RIGHT to confirm
     and LEFT to cancel. pumpSingly() was updated to call this
     function before proceeding.
 
@@ -424,14 +424,18 @@ void calculateActualValue(uint8_t itemNo)
     uint16_t countsPERustepActual = (uint16_t)(tempFloat + 0.5);
     tempFloat = multiplier / (float)countsPERustepActual;
     tempFloat /= (float)(coef * NOFMICROSTEPS);
-    items[itemNo].value = (uint32_t)tempFloat;
+    
+    // Round values
+    items[itemNo].value = (uint32_t)(tempFloat + 0.5); 
   }
 
   else if (items[itemNo].type == VOLUME)
   {
     uint32_t nSteps = (uint32_t)(coef * (float)items[itemNo].value + 0.5);
     float tempFloat = (float)nSteps / coef;
-    items[itemNo].value = (uint32_t)tempFloat;
+    
+    // Round values
+    items[itemNo].value = (uint32_t)(tempFloat + 0.5);
   }
 
   else if (items[itemNo].type == TIME)
@@ -836,7 +840,7 @@ bool confirmStart()
 {
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print(F("Ready? Yes or No"));  // CHANGE 4: confirmation prompt before any pumping operation
+  lcd.print(F("Ready to Start?"));  // CHANGE 4: confirmation prompt before any pumping operation
   lcd.setCursor(0, 1);
   lcd.print(F("< NO       YES >"));  // CHANGE 4: LEFT = cancel, RIGHT = confirm
 
@@ -880,6 +884,13 @@ void pumpSingly(int8_t pumpingDirection, uint32_t flowrate, uint32_t volume)
 ********************************************************************/
 void pumpContinuously()
 {
+  // Checking confirmation....  -- CHANGE 4: guard added, aborts if user cancels
+  if (!confirmStart())
+  {
+    printScreen(); // Return
+    return;
+  }
+
   int8_t pumpingDirection[2] = {1, -1};
   uint32_t flowrate[2] = {items[items[currentItem].button[LEFT]].value, items[currentItem].value};
   uint32_t volume = 4294000000;
