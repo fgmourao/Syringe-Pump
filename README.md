@@ -69,6 +69,26 @@ This prevents accidental triggering of pumping operations.
 
 ---
 
+## Change 5 — Rounding correction in value calculation
+
+In the original `calculateActualValue()` function, the computed
+FLOWRATE and VOLUME values were assigned to `uint32_t` via direct
+float-to-integer cast, which always truncates (e.g. `2.9 → 2`).
+
+This was replaced with conventional rounding by adding `0.5` before
+the cast (e.g. `(uint32_t)(value + 0.5)`), consistent with the
+rounding already applied elsewhere in the original code.
+
+| Location | Original | Modified |
+| :--- | :--- | :--- |
+| FLOWRATE assignment | `(uint32_t)tempFloat` | `(uint32_t)(tempFloat + 0.5)` |
+| VOLUME assignment | `(uint32_t)tempFloat` | `(uint32_t)(tempFloat + 0.5)` |
+
+This reduces cumulative rounding errors in microstep counts,
+improving dispensed volume accuracy over repeated operations.
+
+---
+
 ## Summary
 
 | # | Change | Scope |
@@ -77,3 +97,5 @@ This prevents accidental triggering of pumping operations.
 | 2 | Manual Positioning Mode (jog control) | Firmware — new function + menu entry |
 | 3 | Custom startup screensaver | Firmware — `showScreensaver()` |
 | 4 | Start confirmation dialog | Firmware — new `confirmStart()` + `pumpSingly()` |
+| 5 | Rounding correction in value calculation | Firmware — `calculateActualValue()` |
+
