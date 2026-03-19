@@ -418,7 +418,7 @@ void calculateActualValue(uint8_t itemNo)
     tempFloat = multiplier / (float)countsPERustepActual;
     tempFloat /= (float)(coef * NOFMICROSTEPS);
     
-    // Round values
+    // // CHANGE 5: Round values
     items[itemNo].value = (uint32_t)(tempFloat + 0.5); 
   }
 
@@ -427,7 +427,7 @@ void calculateActualValue(uint8_t itemNo)
     uint32_t nSteps = (uint32_t)(coef * (float)items[itemNo].value + 0.5);
     float tempFloat = (float)nSteps / coef;
     
-    // Round values
+    // CHANGE 5: Round values
     items[itemNo].value = (uint32_t)(tempFloat + 0.5);
   }
 
