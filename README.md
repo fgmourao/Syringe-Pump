@@ -5,7 +5,9 @@ This firmware is a modified version of the open-source syringe pump originally d
 > **Original project:** [mass-spec.ru/projects/diy/syringe_pump/eng](https://www.mass-spec.ru/projects/diy/syringe_pump/eng/)
 > *All credit for the original concept and baseline implementation belongs to the original author.*
 
-The modifications listed below were made by **Flavio Mourao** on **01/08/2026**, targeting improved motion smoothness, manual positional control, and operator safety during microinjection procedures.
+The modifications listed below were made targeting improved motion smoothness, manual positional control, and operator safety during microinjection procedures.
+
+Updated: 01/2026 by Flavio Mourao
 
 ---
 
@@ -56,7 +58,7 @@ The original splash screen (*"OpenSP 0.9 / www.mass-spec.ru"*) was replaced with
 A `confirmStart()` function was introduced to require explicit operator confirmation before any pumping operation begins. After selecting an infusion or refill action, the LCD prompts:
 
 ```
-Ready? Yes or No
+Ready to Start?
 < NO       YES >
 ```
 
