@@ -93,3 +93,13 @@ improving dispensed volume accuracy over repeated operations.
 | 4 | Start confirmation dialog | Firmware — new `confirmStart()` + `pumpSingly()` |
 | 5 | Rounding correction in value calculation | Firmware — `calculateActualValue()` |
 
+---
+
+## Author
+
+Flavio Mourao (mourao.fg@gmail.com)  
+Federal University of Minas Gerais, Brazil  
+
+Development started: January 2026  
+Last update: March 2026
+
