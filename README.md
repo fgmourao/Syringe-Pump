@@ -18,8 +18,6 @@ The default lead screw was replaced with a **0.6 mm/revolution** unit, reducing 
 | Parameter | Original | Modified |
 | :--- | :---: | :---: |
 | Lead screw pitch | 2.0 mm/rev | **0.6 mm/rev** |
-| Displacement per microstep | Higher | **Reduced** |
-| Motion smoothness | Standard | **Improved** |
 
 ---
 
@@ -49,8 +47,6 @@ A dedicated **Positioning** entry was added to the main menu (between *Cycle Mod
 
 ## Change 3 — Startup screensaver customized
 
-The original splash screen (*"OpenSP 0.9 / www.mass-spec.ru"*) was replaced with a custom message displayed at boot.
-
 ---
 
 ## Change 4 — Start confirmation dialog added
@@ -64,8 +60,6 @@ Ready to Start?
 
 * **RIGHT** → confirm and proceed
 * **LEFT** → cancel and return to menu
-
-This prevents accidental triggering of pumping operations.
 
 ---
 
